@@ -13,6 +13,7 @@ USE_HEATSHRINK ?= yes
 HTTPD_WEBSOCKETS ?= yes
 USE_OPENSDK ?= no
 HTTPD_MAX_CONNECTIONS ?= 4
+HTMLDIR ?= ../html
 #For FreeRTOS
 HTTPD_STACKSIZE ?= 2048
 #Auto-detect ESP32 build if not given.
@@ -164,7 +165,12 @@ endef
 
 all: checkdirs $(LIB) webpages.espfs libwebpages-espfs.a
 
+ifeq ("$(USE_HEATSHRINK)","yes")
 submodules: lib/heatshrink/Makefile
+else
+submodules:
+endif
+
 lib/heatshrink/Makefile:
 	$(Q) echo "Heatshrink isn't found. Checking out submodules to fetch it."
 	$(Q) git submodule init
@@ -181,10 +187,10 @@ $(BUILD_DIR):
 	$(Q) mkdir -p $@
 
 
-webpages.espfs: $(HTMLDIR) espfs/mkespfsimage/mkespfsimage
+webpages.espfs: $(HTMLDIR) espfs/mkespfsimage/mkespfsimage.exe
 ifeq ("$(COMPRESS_W_YUI)","yes")
 	$(Q) rm -rf html_compressed;
-	$(Q) cp -r ../html html_compressed;
+	$(Q) cp -r $(HTMLDIR) html_compressed;
 	$(Q) echo "Compression assets with yui-compressor. This may take a while..."
 	$(Q) for file in `find html_compressed -type f -name "*.js"`; do $(YUI-COMPRESSOR) --type js $$file -o $$file; done
 	$(Q) for file in `find html_compressed -type f -name "*.css"`; do $(YUI-COMPRESSOR) --type css $$file -o $$file; done
@@ -193,7 +199,7 @@ ifeq ("$(COMPRESS_W_YUI)","yes")
 # override with -g cmdline parameter
 	$(Q) cd html_compressed; find . | $(THISDIR)/espfs/mkespfsimage/mkespfsimage > $(THISDIR)/webpages.espfs; cd ..;
 else
-	$(Q) cd ../html; find . | $(THISDIR)/espfs/mkespfsimage/mkespfsimage > $(THISDIR)/webpages.espfs; cd ..
+	$(Q) cd $(HTMLDIR); find . | $(THISDIR)/espfs/mkespfsimage/mkespfsimage > $(THISDIR)/webpages.espfs; cd ..
 endif
 
 libwebpages-espfs.a: webpages.espfs
@@ -202,7 +208,7 @@ libwebpages-espfs.a: webpages.espfs
 	$(Q) $(LD) -nostdlib -Wl,-r build/webpages.espfs.o.tmp -o build/webpages.espfs.o -Wl,-T webpages.espfs.ld
 	$(Q) $(AR) cru $@ build/webpages.espfs.o
 
-espfs/mkespfsimage/mkespfsimage: espfs/mkespfsimage/
+espfs/mkespfsimage/mkespfsimage.exe: espfs/mkespfsimage
 	$(Q) $(MAKE) -C espfs/mkespfsimage USE_HEATSHRINK="$(USE_HEATSHRINK)" GZIP_COMPRESSION="$(GZIP_COMPRESSION)"
 
 clean:
