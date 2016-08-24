@@ -1,3 +1,5 @@
+CC=gcc
+
 GZIP_COMPRESSION ?= no
 USE_HEATSHRINK ?= yes
 
@@ -11,7 +13,7 @@ CFLAGS		+= -DESPFS_HEATSHRINK
 endif
 
 OBJS=main.o heatshrink_encoder.o
-TARGET=mkespfsimage
+TARGET=mkespfsimage.exe
 
 $(TARGET): $(OBJS)
 ifeq ("$(GZIP_COMPRESSION)","yes")
